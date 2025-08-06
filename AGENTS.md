@@ -26,4 +26,4 @@
 - Ask clarifying questions if requirements are ambiguous and test edge cases
   before finalizing code.
 
-(See .cursorrules for full details.)
+Always refer to .cursorrules for full details.
