@@ -1,25 +1,25 @@
-import { type InValue, sqlite } from "https://esm.town/v/stevekrouse/sqlite";
+import { type InValue, sqlite } from "https://esm.town/v/stevekrouse/sqlite"
 
-const TABLE_NAME = "kv_store_v1";
+const TABLE_NAME = "kv_store_v1"
 
 export interface KvEntry<T = unknown> {
-  key: string;
-  value: T;
-  updatedAt: number;
+  key: string
+  value: T
+  updatedAt: number
 }
 
 export interface KvStore {
-  set<T = unknown>(key: string, value: T): Promise<void>;
-  get<T = unknown>(key: string): Promise<T | undefined>;
-  delete(key: string): Promise<void>;
-  list<T = unknown>(prefix?: string): Promise<KvEntry<T>[]>;
+  set<T = unknown>(key: string, value: T): Promise<void>
+  get<T = unknown>(key: string): Promise<T | undefined>
+  delete(key: string): Promise<void>
+  list<T = unknown>(prefix?: string): Promise<KvEntry<T>[]>
 }
 
 class SqliteKVStore implements KvStore {
-  private initialized = false;
+  private initialized = false
 
   private async ensureTable(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) return
 
     await sqlite.execute(`
       CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
@@ -27,16 +27,16 @@ class SqliteKVStore implements KvStore {
         value TEXT NOT NULL,
         updated_at INTEGER NOT NULL
       )
-    `);
+    `)
 
-    this.initialized = true;
+    this.initialized = true
   }
 
   async set<T = unknown>(key: string, value: T): Promise<void> {
-    await this.ensureTable();
+    await this.ensureTable()
 
-    const jsonValue = JSON.stringify(value);
-    const timestamp = Date.now();
+    const jsonValue = JSON.stringify(value)
+    const timestamp = Date.now()
 
     await sqlite.execute({
       sql: `
@@ -47,54 +47,55 @@ class SqliteKVStore implements KvStore {
           updated_at = excluded.updated_at
       `,
       args: [key, jsonValue, timestamp],
-    });
+    })
   }
 
   async get<T = unknown>(key: string): Promise<T | undefined> {
-    await this.ensureTable();
+    await this.ensureTable()
 
     const result = await sqlite.execute({
       sql: `SELECT value FROM ${TABLE_NAME} WHERE key = ?`,
       args: [key],
-    });
+    })
 
     if (result.rows.length === 0) {
-      return undefined;
+      return undefined
     }
 
     try {
-      return JSON.parse(result.rows[0].value as string) as T;
+      return JSON.parse(result.rows[0].value as string) as T
     } catch (error) {
       throw new Error(
-        `Failed to parse stored value for key "${key}": ${error.message}`
-      );
+        `Failed to parse stored value for key "${key}": ${error.message}`,
+      )
     }
   }
 
   async delete(key: string): Promise<void> {
-    await this.ensureTable();
+    await this.ensureTable()
 
     await sqlite.execute({
       sql: `DELETE FROM ${TABLE_NAME} WHERE key = ?`,
       args: [key],
-    });
+    })
   }
 
   async list<T = unknown>(prefix?: string): Promise<KvEntry<T>[]> {
-    await this.ensureTable();
+    await this.ensureTable()
 
-    let sql: string;
-    let args: InValue[];
+    let sql: string
+    let args: InValue[]
 
     if (prefix) {
-      sql = `SELECT key, value, updated_at FROM ${TABLE_NAME} WHERE key LIKE ? ORDER BY key`;
-      args = [`${prefix}%`];
+      sql =
+        `SELECT key, value, updated_at FROM ${TABLE_NAME} WHERE key LIKE ? ORDER BY key`
+      args = [`${prefix}%`]
     } else {
-      sql = `SELECT key, value, updated_at FROM ${TABLE_NAME} ORDER BY key`;
-      args = [];
+      sql = `SELECT key, value, updated_at FROM ${TABLE_NAME} ORDER BY key`
+      args = []
     }
 
-    const result = await sqlite.execute({ sql, args });
+    const result = await sqlite.execute({ sql, args })
 
     return result.rows.map((row) => {
       try {
@@ -102,14 +103,14 @@ class SqliteKVStore implements KvStore {
           key: row.key as string,
           value: JSON.parse(row.value as string) as T,
           updatedAt: row.updated_at as number,
-        };
+        }
       } catch (error) {
         throw new Error(
-          `Failed to parse stored value for key "${row.key}": ${error.message}`
-        );
+          `Failed to parse stored value for key "${row.key}": ${error.message}`,
+        )
       }
-    });
+    })
   }
 }
 
-export const kv: KvStore = new SqliteKVStore();
+export const kv: KvStore = new SqliteKVStore()
