@@ -66,7 +66,7 @@ class SqliteKVStore implements KvStore {
       return JSON.parse(result.rows[0].value as string) as T;
     } catch (error) {
       throw new Error(
-        `Failed to parse stored value for key "${key}": ${error.message}`,
+        `Failed to parse stored value for key "${key}": ${error.message}`
       );
     }
   }
@@ -87,8 +87,7 @@ class SqliteKVStore implements KvStore {
     let args: InValue[];
 
     if (prefix) {
-      sql =
-        `SELECT key, value, updated_at FROM ${TABLE_NAME} WHERE key LIKE ? ORDER BY key`;
+      sql = `SELECT key, value, updated_at FROM ${TABLE_NAME} WHERE key LIKE ? ORDER BY key`;
       args = [`${prefix}%`];
     } else {
       sql = `SELECT key, value, updated_at FROM ${TABLE_NAME} ORDER BY key`;
@@ -106,7 +105,7 @@ class SqliteKVStore implements KvStore {
         };
       } catch (error) {
         throw new Error(
-          `Failed to parse stored value for key "${row.key}": ${error.message}`,
+          `Failed to parse stored value for key "${row.key}": ${error.message}`
         );
       }
     });
